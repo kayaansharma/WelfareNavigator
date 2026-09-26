@@ -1,0 +1,16 @@
+﻿category_id,category_name,description
+C001,Agriculture,"Farming, irrigation, crop insurance, farmer credit and agricultural support"
+C002,Housing,Rural and urban housing assistance
+C003,Health,Health insurance and healthcare assistance
+C004,Women & Child,"Women, girls, maternity and child welfare"
+C005,Social Security,Pensions and social assistance
+C006,Education,"School, college, scholarship and student support"
+C007,Employment/Business,"Employment generation, entrepreneurship and business finance"
+C008,Skills/Employment,"Vocational training, apprenticeships and employability"
+C009,Finance/Insurance,"Financial inclusion, insurance and pension products"
+C010,Energy/Women,Household energy access and women-focused support
+C011,Street Vendors,Credit and support for street vendors
+C012,Artisans,Traditional artisans and craftspeople
+C013,Labour/Social Security,Social-security programs for workers
+C014,Pension,Contributory and retirement pension programs
+C015,Financial Inclusion,Bank-account access and basic financial services

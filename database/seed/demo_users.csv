@@ -1,0 +1,41 @@
+﻿user_id,name,age,gender,state,district,occupation,education,annual_family_income,family_size,social_category,disability,marital_status,has_bank_account,is_farmer,is_student,is_pregnant
+U001,Aarav Sharma,23,Male,Uttar Pradesh,Lucknow,Student,Undergraduate,180000,4,General,No,Single,Yes,No,Yes,No
+U002,Priya Verma,21,Female,Uttar Pradesh,Kanpur,Student,Undergraduate,140000,5,OBC,No,Single,Yes,No,Yes,No
+U003,Ravi Kumar,45,Male,Uttar Pradesh,Barabanki,Farmer,Secondary,180000,5,General,No,Married,Yes,Yes,No,No
+U004,Sunita Devi,38,Female,Uttar Pradesh,Prayagraj,Farmer,Primary,120000,6,OBC,No,Married,Yes,Yes,No,No
+U005,Mohammed Imran,29,Male,Uttar Pradesh,Meerut,Street Vendor,Secondary,160000,4,General,No,Married,Yes,No,No,No
+U006,Neha Singh,27,Female,Uttar Pradesh,Noida,Entrepreneur,Graduate,320000,3,General,No,Single,Yes,No,No,No
+U007,Pooja Yadav,31,Female,Uttar Pradesh,Agra,Self-employed,Graduate,220000,4,OBC,No,Married,Yes,No,No,No
+U008,Rajesh Gupta,67,Male,Uttar Pradesh,Varanasi,Retired,Secondary,90000,2,General,No,Married,Yes,No,No,No
+U009,Kamla Devi,62,Female,Uttar Pradesh,Gorakhpur,Widow,Primary,70000,3,General,No,Widowed,Yes,No,No,No
+U010,Arjun Patel,35,Male,Gujarat,Ahmedabad,Farmer,Secondary,250000,4,General,No,Married,Yes,Yes,No,No
+U011,Meena Kumari,26,Female,Bihar,Patna,Student,Undergraduate,110000,5,SC,No,Single,Yes,No,Yes,No
+U012,Vikram Singh,40,Male,Uttar Pradesh,Meerut,Artisan,Secondary,190000,5,OBC,No,Married,Yes,No,No,No
+U013,Anjali Mishra,19,Female,Uttar Pradesh,Lucknow,Student,Undergraduate,90000,4,General,No,Single,Yes,No,Yes,No
+U014,Sanjay Kumar,52,Male,Uttar Pradesh,Agra,Unorganized Worker,Secondary,150000,5,SC,No,Married,Yes,No,No,No
+U015,Rekha Sharma,34,Female,Uttar Pradesh,Bareilly,Homemaker,Secondary,175000,5,General,No,Married,Yes,No,No,No
+U016,Deepak Verma,25,Male,Uttar Pradesh,Ghaziabad,Apprentice,Diploma,200000,3,OBC,No,Single,Yes,No,No,No
+U017,Fatima Khan,24,Female,Uttar Pradesh,Aligarh,Student,Undergraduate,125000,6,General,No,Single,Yes,No,Yes,No
+U018,Mahesh Yadav,43,Male,Uttar Pradesh,Ayodhya,Farmer,Secondary,280000,7,OBC,No,Married,Yes,Yes,No,No
+U019,Shalini Gupta,30,Female,Uttar Pradesh,Noida,Entrepreneur,Graduate,450000,2,General,No,Married,Yes,No,No,No
+U020,Ramesh Chandra,72,Male,Uttar Pradesh,Kanpur,Retired,Primary,60000,2,SC,No,Married,Yes,No,No,No
+U021,Sita Devi,29,Female,Uttar Pradesh,Jhansi,Pregnant,Secondary,130000,4,SC,No,Married,Yes,No,No,Yes
+U022,Amit Rawat,22,Male,Uttarakhand,Dehradun,Student,Undergraduate,100000,4,ST,No,Single,Yes,No,Yes,No
+U023,Nisha Kumari,33,Female,Uttar Pradesh,Lucknow,Person with Disability,Graduate,130000,3,SC,Yes,Single,Yes,No,No,No
+U024,Manoj Tiwari,39,Male,Uttar Pradesh,Varanasi,Artisan,Secondary,210000,4,General,No,Married,Yes,No,No,No
+U025,Kavita Singh,42,Female,Uttar Pradesh,Prayagraj,Unorganized Worker,Secondary,170000,5,OBC,No,Married,Yes,No,No,No
+U026,Rahul Jain,28,Male,Delhi,New Delhi,Street Vendor,Secondary,190000,3,General,No,Single,Yes,No,No,No
+U027,Geeta Devi,56,Female,Uttar Pradesh,Mathura,Widow,Primary,80000,2,OBC,No,Widowed,Yes,No,No,No
+U028,Suresh Pal,48,Male,Uttar Pradesh,Aligarh,Farmer,Primary,145000,6,SC,No,Married,Yes,Yes,No,No
+U029,Ayesha Begum,36,Female,Uttar Pradesh,Moradabad,Entrepreneur,Secondary,240000,5,General,No,Married,Yes,No,No,No
+U030,Karan Singh,20,Male,Uttar Pradesh,Meerut,Student,Diploma,95000,4,General,No,Single,Yes,No,Yes,No
+U031,Ritu Sharma,25,Female,Uttar Pradesh,Lucknow,Student,Diploma,210000,3,General,No,Single,Yes,No,Yes,No
+U032,Harish Kumar,61,Male,Uttar Pradesh,Gorakhpur,Farmer,Primary,110000,4,OBC,No,Married,Yes,Yes,No,No
+U033,Laxmi Devi,24,Female,Uttar Pradesh,Ayodhya,Student,Undergraduate,290000,5,OBC,No,Single,Yes,No,Yes,No
+U034,Dinesh Kumar,37,Male,Uttar Pradesh,Lucknow,Small Business Owner,Graduate,260000,4,SC,No,Married,Yes,No,No,No
+U035,Preeti Singh,28,Female,Uttar Pradesh,Kanpur,Artisan,Secondary,155000,4,OBC,No,Married,Yes,No,No,No
+U036,Om Prakash,68,Male,Uttar Pradesh,Bareilly,Retired,Primary,75000,3,OBC,No,Married,Yes,No,No,No
+U037,Sana Khan,32,Female,Uttar Pradesh,Saharanpur,Street Vendor,Secondary,145000,4,General,No,Married,Yes,No,No,No
+U038,Vivek Mishra,18,Male,Uttar Pradesh,Lucknow,Student,Class 12,80000,4,General,No,Single,Yes,No,Yes,No
+U039,Asha Devi,41,Female,Uttar Pradesh,Unnao,Farmer,Primary,95000,7,SC,No,Married,Yes,Yes,No,No
+U040,Nitin Kumar,30,Male,Uttar Pradesh,Ghaziabad,Unorganized Worker,Secondary,175000,4,General,No,Married,Yes,No,No,No

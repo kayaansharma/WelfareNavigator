@@ -1,0 +1,65 @@
+﻿rule_id,scheme_id,field,operator,value,required,notes
+R001,S001,occupation,equals,Farmer,true,Farmer/landholding requirement; official verification applies
+R002,S001,state,equals,Uttar Pradesh,false,Example state filter for UP-focused demo
+R003,S001,is_farmer,equals,Yes,true,Demo rule; actual PM-KISAN eligibility also depends on land records and exclusions
+R004,S002,is_farmer,equals,Yes,true,Demo rule for KCC farmer profile
+R005,S003,is_farmer,equals,Yes,true,Demo rule; actual eligibility depends on notified crop/area and enrollment
+R006,S004,is_farmer,equals,Yes,true,Demo rule; component-specific criteria apply
+R007,S005,is_farmer,equals,Yes,true,Demo rule; PM-KUSUM component-specific criteria apply
+R008,S006,is_farmer,equals,Yes,true,Farmer requirement
+R009,S006,age,between,18-40,true,Small/marginal farmer pension entry age
+R010,S007,is_farmer,equals,Yes,true,Farmer/land parcel
+R011,S008,state,equals,Uttar Pradesh,false,UP demo filter; actual PMAY-G is national
+R012,S008,residence_type,equals,Rural,true,Synthetic field not currently in demo_users; treat as unknown unless collected
+R013,S009,state,equals,Uttar Pradesh,false,UP demo filter; scheme is urban and national
+R014,S009,residence_type,equals,Urban,true,Synthetic field not currently in demo_users; treat as unknown unless collected
+R015,S010,gender,equals,Female,true,Adult woman applicant
+R016,S010,has_lpg_connection,equals,No,true,Current PMUY identification rules should be verified
+R017,S011,state,equals,Uttar Pradesh,false,Demo scope filter; PM-JAY eligibility is database-based
+R018,S012,gender,equals,Female,true,Women-focused maternity benefit
+R019,S012,is_pregnant,equals,Yes,true,Demo pregnancy indicator
+R020,S013,gender,equals,Female,true,Maternal scheme
+R021,S013,is_pregnant,equals,Yes,true,Demo pregnancy indicator
+R022,S014,gender,equals,Female,false,Girl-child account; actual account holder is a minor girl and guardian opens account
+R023,S015,age,greater_than_or_equal,60,true,Demo age threshold; verify current state implementation
+R024,S016,gender,equals,Female,true,Widow pension
+R025,S016,marital_status,equals,Widowed,true,Widow status
+R026,S017,disability,equals,Yes,true,Disability requirement
+R027,S018,family_size,greater_than_or_equal,1,false,Placeholder: actual NFBS requires death of primary breadwinner and other conditions
+R028,S019,occupation,equals,Street Vendor,true,Street-vendor status
+R029,S020,occupation,equals,Artisan,true,Notified artisan/craftsperson trade must be verified
+R030,S020,age,greater_than_or_equal,18,true,Adult applicant
+R031,S021,occupation,in,Entrepreneur|Self-employed|Small Business Owner,true,Micro-enterprise/business applicant
+R032,S022,age,greater_than_or_equal,18,true,Adult entrepreneur
+R033,S022,gender,equals,Female,false,Women entrepreneur route; SC/ST route requires additional category logic
+R034,S023,age,greater_than_or_equal,18,true,Adult applicant
+R035,S024,age,between,18-40,true,PM-SYM entry age
+R036,S024,occupation,equals,Unorganized Worker,true,Unorganized worker
+R037,S025,age,between,18-50,true,PMJJBY entry age
+R038,S025,has_bank_account,equals,Yes,true,Eligible linked bank/post-office account
+R039,S026,age,between,18-70,true,PMSBY age range
+R040,S026,has_bank_account,equals,Yes,true,Eligible linked bank/post-office account
+R041,S027,age,between,18-40,true,APY entry age
+R042,S027,has_bank_account,equals,Yes,true,Savings account requirement
+R043,S028,has_bank_account,equals,No,false,Useful for financial-inclusion discovery
+R044,S029,is_student,equals,Yes,false,Candidate for skills/training; current PMKVY rules vary by program
+R045,S030,occupation,equals,Apprentice,true,Demo apprentice profile
+R046,S031,is_student,equals,Yes,true,College/university student
+R047,S031,annual_family_income,less_than_or_equal,450000,true,Prototype income threshold; verify current NSP notice before production
+R048,S032,is_student,equals,Yes,true,Student requirement
+R049,S032,annual_family_income,less_than_or_equal,350000,true,Prototype threshold; verify current NMMSS guidelines
+R050,S033,social_category,in,OBC|EBC|DNT,true,Target category
+R051,S033,is_student,equals,Yes,true,Student requirement
+R052,S034,gender,equals,Female,true,Girl student
+R053,S034,is_student,equals,Yes,true,Student requirement
+R054,S035,disability,equals,Yes,true,Specially-abled student route
+R055,S035,is_student,equals,Yes,true,Student requirement
+R056,S036,is_student,equals,Yes,true,Student requirement
+R057,S037,state,equals,Uttar Pradesh,true,UP residence
+R058,S037,gender,equals,Female,true,Girl child/family benefit
+R059,S038,state,equals,Uttar Pradesh,true,UP scholarship system
+R060,S038,is_student,equals,Yes,true,Student requirement
+R061,S039,state,equals,Uttar Pradesh,true,UP residence
+R062,S039,age,greater_than_or_equal,60,true,Prototype old-age pension threshold; verify current UP rules
+R063,S040,state,equals,Uttar Pradesh,true,UP residence
+R064,S040,marital_status,equals,Widowed,true,Widow status

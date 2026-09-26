@@ -1,0 +1,93 @@
+﻿document_id,scheme_id,document_name,document_type,requirement_level,notes
+D001,S001,Aadhaar Card,Identity,Usually,Verify with current application requirements
+D002,S001,Land/landholding record,Agriculture,Usually,State/land-record verification
+D003,S001,Bank account details,Banking,Usually,Account should meet scheme/payment requirements
+D004,S002,Aadhaar Card,Identity,Usually,Bank-specific KYC may vary
+D005,S002,Land/cultivation proof,Agriculture,Usually,Depends on farmer category
+D006,S002,Bank account/KYC documents,Banking,Usually,Lender requirements apply
+D007,S003,Aadhaar/ID,Identity,Usually,Enrollment documents vary by insurer/state
+D008,S003,Land/crop details,Agriculture,Usually,Notified crop/area evidence
+D009,S004,Aadhaar/ID,Identity,If required,Component-specific
+D010,S004,Land/farm records,Agriculture,If required,Component-specific
+D011,S005,Aadhaar/ID,Identity,If required,Component-specific
+D012,S005,Land/pump/electricity documents,Agriculture,If required,Component-specific
+D013,S006,Aadhaar Card,Identity,Usually,Enrollment KYC
+D014,S006,Landholding/farmer proof,Agriculture,Usually,Small/marginal farmer verification
+D015,S008,Aadhaar/ID,Identity,Usually,Beneficiary verification
+D016,S008,Rural residence/household verification,Residence,Usually,Selection/verification process applies
+D017,S009,Aadhaar/ID,Identity,Usually,Urban beneficiary verification
+D018,S009,Income certificate,Income,If required,Current PMAY-U 2.0 component requirements vary
+D019,S010,Aadhaar/ID,Identity,Usually,KYC
+D020,S010,Household eligibility/deprivation proof,Household,If required,Current PMUY identification rules apply
+D021,S011,Aadhaar/ID,Identity,If required,PM-JAY beneficiary verification
+D022,S011,Beneficiary/family record,Household,Usually,Database-based eligibility
+D023,S012,Aadhaar/ID,Identity,Usually,Current PMMVY documentation
+D024,S012,Pregnancy/health registration record,Health,Usually,Current PMMVY process
+D025,S013,Aadhaar/ID,Identity,Usually,State/health facility requirements vary
+D026,S013,Pregnancy/health-facility record,Health,Usually,Institutional delivery documentation
+D027,S014,Girl child birth certificate,Birth,Usually,Account opening
+D028,S014,Guardian KYC,Identity,Usually,Bank/post office requirements
+D029,S015,Aadhaar/ID,Identity,Usually,State verification
+D030,S015,Age proof,Age,Usually,State verification
+D031,S015,Income/BPL/household proof,Income,Usually,Current state implementation
+D032,S016,Aadhaar/ID,Identity,Usually,State verification
+D033,S016,Widow/death certificate,Status,Usually,State verification
+D034,S016,Income/BPL/household proof,Income,Usually,Current state implementation
+D035,S017,Aadhaar/ID,Identity,Usually,State verification
+D036,S017,Disability certificate,Disability,Usually,Prescribed disability criteria
+D037,S018,Aadhaar/ID,Identity,Usually,State verification
+D038,S018,Death certificate,Status,Usually,Primary breadwinner death
+D039,S019,Aadhaar/ID,Identity,Usually,KYC
+D040,S019,Vendor certificate/ID,Occupation,Usually,ULB/survey/CoV requirements
+D041,S020,Aadhaar/ID,Identity,Usually,KYC
+D042,S020,Artisan/trade verification,Occupation,Usually,Notified trade
+D043,S021,Aadhaar/PAN/KYC,Identity/Finance,Usually,Lender requirements
+D044,S021,Business/activity details,Business,Usually,Loan appraisal
+D045,S022,Aadhaar/PAN/KYC,Identity/Finance,Usually,Bank requirements
+D046,S022,Business/project report,Business,Usually,Greenfield enterprise appraisal
+D047,S023,Aadhaar/PAN/KYC,Identity/Finance,Usually,Application requirements
+D048,S023,Project report,Business,Usually,PMEGP project appraisal
+D049,S024,Aadhaar Card,Identity,Usually,Enrollment KYC
+D050,S024,Bank account details,Banking,Usually,Contribution/pension account
+D051,S025,Bank/post-office account,Banking,Required,Linked account
+D052,S025,Aadhaar/KYC,Identity,Usually,Account KYC
+D053,S026,Bank/post-office account,Banking,Required,Linked account
+D054,S026,Aadhaar/KYC,Identity,Usually,Account KYC
+D055,S027,Bank/post-office account,Banking,Required,APY enrollment
+D056,S027,Aadhaar/KYC,Identity,Usually,Account KYC
+D057,S028,Aadhaar/KYC,Identity,Usually,Bank account opening
+D058,S028,Address proof,Residence,If required,KYC rules apply
+D059,S029,Aadhaar/ID,Identity,Usually,Training enrollment
+D060,S029,Education certificate,Education,If required,Job-role dependent
+D061,S030,Aadhaar/ID,Identity,Usually,Apprenticeship registration
+D062,S030,Education/qualification proof,Education,Usually,Trade-specific
+D063,S031,Aadhaar/ID,Identity,Usually,NSP requirements
+D064,S031,Income certificate,Income,Usually,Current scholarship notice
+D065,S031,Marks/merit certificate,Education,Usually,Current scholarship notice
+D066,S032,School/student record,Education,Usually,Selection process
+D067,S032,Income certificate,Income,Usually,Current NMMSS guidelines
+D068,S033,Category certificate,Category,Usually,OBC/EBC/DNT verification
+D069,S033,Income certificate,Income,Usually,Current scholarship notice
+D070,S033,Student/marks record,Education,Usually,Current scholarship notice
+D071,S034,Aadhaar/ID,Identity,Usually,AICTE/NSP requirements
+D072,S034,Girl/student certificate,Education,Usually,Institution verification
+D073,S034,Income certificate,Income,Usually,Current scheme notice
+D074,S035,Disability certificate,Disability,Usually,Prescribed disability criteria
+D075,S035,Student/admission proof,Education,Usually,AICTE-approved institution
+D076,S035,Income certificate,Income,Usually,Current scheme notice
+D077,S036,Student/admission proof,Education,Usually,Current Swanath conditions
+D078,S036,Category/vulnerability proof,Status,Usually,Current Swanath conditions
+D079,S037,Aadhaar/ID,Identity,Usually,UP portal requirements
+D080,S037,Birth certificate,Birth,Usually,Girl-child stage conditions
+D081,S037,Residence/domicile proof,Residence,Usually,UP residence
+D082,S037,Income certificate,Income,Usually,Current UP criteria
+D083,S038,Aadhaar/ID,Identity,Usually,UP scholarship portal
+D084,S038,Caste certificate,Category,If applicable,Category-specific scholarship
+D085,S038,Income certificate,Income,Usually,Current academic year criteria
+D086,S038,Mark sheet/admission proof,Education,Usually,Course/institution verification
+D087,S039,Aadhaar/ID,Identity,Usually,UP SSPY requirements
+D088,S039,Age proof,Age,Usually,State verification
+D089,S039,Income/BPL/household proof,Income,Usually,Current UP criteria
+D090,S040,Aadhaar/ID,Identity,Usually,UP SSPY requirements
+D091,S040,Widow/death certificate,Status,Usually,State verification
+D092,S040,Income/BPL/household proof,Income,Usually,Current UP criteria
