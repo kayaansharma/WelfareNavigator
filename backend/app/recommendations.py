@@ -13,6 +13,21 @@ GENERIC={"government","benefit","benefits","support","assistance","financial","s
 def _rule_value(rule: dict[str, Any]) -> Any:
     return rule.get("value")
 
+def _normalize_numeric_rule_value(value: Any) -> Any:
+    """Coerce numeric strings in rule values while leaving categorical strings alone."""
+    if isinstance(value, list):
+        return [_normalize_numeric_rule_value(item) for item in value]
+    if isinstance(value, str):
+        candidate = value.strip()
+        try:
+            return int(candidate)
+        except ValueError:
+            try:
+                return float(candidate)
+            except ValueError:
+                return value
+    return value
+
 def metadata_for(scheme: dict[str, Any]) -> dict[str, Any]:
     category=str(scheme.get("category","")).casefold()
     category_key=CATEGORY_ALIASES.get(category,"GENERAL_WELFARE")
@@ -23,7 +38,9 @@ def metadata_for(scheme: dict[str, Any]) -> dict[str, Any]:
     if category_key=="EDUCATION" or (by_field.get("is_student") and by_field["is_student"].get("required",True)): targets.add("STUDENT")
     if category_key=="AGRICULTURE" or (by_field.get("is_farmer") and by_field["is_farmer"].get("required",True)) or ("farmer" in text and any(r.get("required",True) and r.get("field")=="occupation" for r in rules)): targets.add("FARMER")
     if "widow" in text or (by_field.get("marital_status") and "widow" in str(_rule_value(by_field["marital_status"])).casefold()): targets.add("WIDOW")
-    if category_key=="SENIOR_CITIZEN" or "old-age" in text or "senior citizen" in text or ("age" in by_field and by_field["age"].get("operator") in {">=","BETWEEN"} and (by_field["age"].get("value",[0])[0] if isinstance(by_field["age"].get("value"),list) else by_field["age"].get("value",0)) >= 60): targets.add("SENIOR_CITIZEN")
+    age_value=_normalize_numeric_rule_value(by_field["age"].get("value",[0])) if "age" in by_field else [0]
+    age_threshold=age_value[0] if isinstance(age_value,list) and age_value else age_value
+    if category_key=="SENIOR_CITIZEN" or "old-age" in text or "senior citizen" in text or ("age" in by_field and by_field["age"].get("operator") in {">=","BETWEEN"} and isinstance(age_threshold,(int,float)) and age_threshold >= 60): targets.add("SENIOR_CITIZEN")
     if category_key=="WOMEN_CHILD" or any(r.get("field")=="gender" and str(r.get("value","")).casefold()=="female" and r.get("required",True) for r in rules): targets.add("WOMAN_CHILD")
     if category_key=="DISABILITY" or any(r.get("field") in {"disability","disability_status"} and r.get("required",True) for r in rules): targets.add("DISABILITY")
     if category_key=="ENTREPRENEURSHIP" or "entrepreneur" in text or "micro enterprise" in text: targets.add("ENTREPRENEUR")

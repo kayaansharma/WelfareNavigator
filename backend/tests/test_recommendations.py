@@ -1,6 +1,7 @@
 import unittest
 
 from app.main import SCHEMES, RAG_CHUNKS, check, extract, recommendations
+from app.recommendations import metadata_for
 from app.taxonomy import detect_intent
 
 
@@ -38,6 +39,23 @@ class RecommendationRegressionTests(unittest.TestCase):
         _, result = run_query("I am a 68-year-old retired person.")
         self.assertIn("SENIOR_CITIZEN", result["roles"])
         self.assertFalse(self.targets(result) & {"STUDENT"})
+
+    def test_senior_age_rule_numeric_strings_are_safe(self):
+        for value in ("60", 60, 60.0, ["60", "100"], [60, 100], [60.0, 100.0]):
+            with self.subTest(value=value):
+                metadata = metadata_for({
+                    "id": "senior-string-age",
+                    "category": "General Welfare",
+                    "rules": [{"field": "age", "operator": ">=", "value": value}],
+                })
+                self.assertIn("SENIOR_CITIZEN", metadata["target_groups"])
+
+        categorical = metadata_for({
+            "id": "categorical-age",
+            "category": "General Welfare",
+            "rules": [{"field": "age", "operator": ">=", "value": "elderly"}],
+        })
+        self.assertNotIn("SENIOR_CITIZEN", categorical["target_groups"])
 
     def test_widow_does_not_receive_farmer_only_schemes(self):
         _, result = run_query("I am a widow with two children.")
