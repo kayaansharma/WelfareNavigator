@@ -3,6 +3,7 @@ import re
 import csv
 import json
 import os
+import logging
 from io import BytesIO
 import urllib.request
 import urllib.error
@@ -14,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .taxonomy import detect_intent, detect_language, explicit_negatives
 from .recommendations import build_chunks, metadata_for, rag_search, rank_recommendations, retrieve_candidates
+from . import database
+
+logger = logging.getLogger(__name__)
 
 SCHEMES: list[dict[str, Any]] = [
  {"id":"edu-demo","name":"Student Support Grant (Demo)","category":"Education","government":"Synthetic demo dataset","ministry":"Demo only","state":"Uttar Pradesh","benefits":"Illustrative education assistance; no real benefit is offered.","description":"Synthetic example used to demonstrate profile matching and application preparation.","eligibility_summary":"Synthetic demo criteria only. Not an official government scheme.","application_process":"Find current education services through official government resources. This demo does not submit applications.","application_url":"https://www.india.gov.in/","source_url":"https://www.india.gov.in/","source_name":"India.gov.in general directory; rules are synthetic","last_verified":"2026-09-26","active":True,"documents":["Aadhaar","Income Certificate","Domicile Certificate","Student Certificate"],"rules":[{"field":"age","operator":"<=","value":30,"description":"Age 30 or below (synthetic demo rule)"},{"field":"annual_income","operator":"<=","value":250000,"description":"Annual family income ₹2.5 lakh or below (synthetic demo rule)"},{"field":"state","operator":"IN","value":["Uttar Pradesh"],"description":"Resident of Uttar Pradesh (synthetic demo rule)"},{"field":"student_status","operator":"==","value":True,"description":"Currently studying (synthetic demo rule)"},{"field":"institution_type","operator":"IN","value":["government","government-aided"],"description":"Government or aided institution (synthetic demo rule)"}]},
@@ -78,8 +82,24 @@ def load_catalog() -> tuple[list[dict[str, Any]], list[dict[str, str]], list[dic
         })
     return catalog, read_csv("demo_users.csv"), read_csv("user_documents.csv"), read_csv("scheme_categories.csv")
 
+DATABASE_SOURCE = "csv_fallback"
+
+def load_runtime_catalog(database_loader=None, csv_loader=None):
+    """Prefer Supabase at startup; keep the established CSV loader as fallback."""
+    global DATABASE_SOURCE
+    database_loader=database_loader or database.load_catalog
+    csv_loader=csv_loader or load_catalog
+    try:
+        catalog=database_loader()
+        DATABASE_SOURCE="supabase"
+        return catalog
+    except Exception as exc:
+        DATABASE_SOURCE="csv_fallback"
+        logger.warning("Supabase connection unavailable; using CSV fallback (%s)", type(exc).__name__)
+        return csv_loader()
+
 try:
-    SCHEMES, DEMO_USERS, DEMO_USER_DOCUMENTS, SCHEME_CATEGORIES = load_catalog()
+    SCHEMES, DEMO_USERS, DEMO_USER_DOCUMENTS, SCHEME_CATEGORIES = load_runtime_catalog()
 except (OSError, KeyError):
     DEMO_USERS, DEMO_USER_DOCUMENTS, SCHEME_CATEGORIES = [], [], []
 for scheme in SCHEMES:
@@ -89,7 +109,12 @@ PROFILE: dict[str, Any] = {k:None for k in ["age","date_of_birth","gender","stat
 PROFILE.update(existing_benefits=[],language="English",_statuses={})
 DOCUMENTS: list[dict[str, Any]] = []
 app=FastAPI(title="Welfare Navigator API",version="1.0.0")
-app.add_middleware(CORSMiddleware,allow_origins=["http://localhost:3000"],allow_methods=["*"],allow_headers=["*"])
+_cors_origins=["http://localhost:3000"]
+_configured_frontend_origin=os.getenv("FRONTEND_ORIGIN", "").strip()
+_configured_frontend_origin=_configured_frontend_origin.rstrip("/")
+if _configured_frontend_origin and _configured_frontend_origin not in _cors_origins:
+ _cors_origins.append(_configured_frontend_origin)
+app.add_middleware(CORSMiddleware,allow_origins=_cors_origins,allow_methods=["*"],allow_headers=["*"])
 class ChatRequest(BaseModel):
  message:str
  language:str|None=None
@@ -229,16 +254,70 @@ def apply_profile(f:dict[str,Any]):
   if k=="annual_income" and v is not None and PROFILE.get("verified_annual_income") is not None and int(v)!=int(PROFILE["verified_annual_income"]):
    PROFILE["_statuses"]["verified_annual_income"]="NEEDS_REVIEW"
    for doc in DOCUMENTS:
-    if doc.get("status")=="USER_CONFIRMED_CONTENT":doc["status"]="DISCREPANCY_NEEDS_REVIEW"
+    if doc.get("status")=="USER_CONFIRMED_CONTENT":
+     doc["status"]="DISCREPANCY_NEEDS_REVIEW"
+     persist_document_status(doc)
   if k in aliases:PROFILE[aliases[k]]=v;PROFILE["_statuses"][aliases[k]]="USER_REPORTED"
+ persist_current_profile()
+
+def persist_current_profile():
+ if ACTIVE_SUPABASE_USER_ID and DATABASE_SOURCE=="supabase":
+  try:database.save_profile(ACTIVE_SUPABASE_USER_ID,PROFILE)
+  except Exception as exc:logger.warning("Supabase profile save failed; keeping request-local profile (%s)",type(exc).__name__)
 def recommendations(p:dict[str,Any],query:str=""):
  return rank_recommendations(SCHEMES,p,query,RAG_CHUNKS,check_fn=check)
 
 @app.get("/api/health")
-def health():return {"status":"ok","demo_mode":True}
+def health():
+ available=database.check_connection()
+ using_supabase=available and DATABASE_SOURCE=="supabase"
+ return {"status":"ok","demo_mode":not using_supabase,"database":"supabase" if using_supabase else "csv_fallback"}
 @app.get("/api/profile")
 def get_profile():return PROFILE
+ACTIVE_SUPABASE_USER_ID: str | None = None
+
+def get_profile_by_demo_id(user_id: str) -> dict[str, Any] | None:
+ try:
+  if DATABASE_SOURCE=="supabase":return database.profile_by_demo_id(user_id)
+ except Exception as exc:
+  logger.warning("Supabase profile lookup failed; using cached demo data (%s)", type(exc).__name__)
+ return None
+
+def get_user_by_demo_id(user_id: str) -> dict[str, Any] | None:
+ row=get_profile_by_demo_id(user_id)
+ if row:return {"id":row.get("user_id"),"demo_id":user_id,"created_at":row.get("created_at")}
+ return {"id":None,"demo_id":user_id} if any(str(u.get("user_id"))==user_id for u in DEMO_USERS) else None
+
+def normalized_db_profile(row: dict[str, Any]) -> dict[str, Any]:
+ attributes=row.get("attributes") or {}
+ mapping={"annual_family_income":"annual_income","social_category":"category","is_student":"student_status","is_farmer":"farmer_status","disability":"disability_status"}
+ profile={k:v for k,v in attributes.items() if k not in {"user_id","name"}}
+ for source,destination in mapping.items():
+  if destination not in profile and source in attributes:profile[destination]=attributes[source]
+  if source not in profile and destination in attributes:profile[source]=attributes[destination]
+ for field in ("age","annual_income","annual_family_income","monthly_income","family_size","number_of_children"):
+  value=profile.get(field)
+  if isinstance(value,str) and value.strip():
+   try:profile[field]=float(value) if "." in value else int(value)
+   except ValueError:pass
+ for field in ("student_status","is_student","farmer_status","is_farmer","disability_status","disability","widow_status","senior_citizen_status","entrepreneur_status","employment_status","has_bank_account","has_lpg_connection","is_pregnant"):
+  value=profile.get(field)
+  if isinstance(value,str):
+   if value.casefold() in {"yes","true","1"}:profile[field]=True
+   elif value.casefold() in {"no","false","0"}:profile[field]=False
+ profile["_statuses"]={**(row.get("field_status") or {})}
+ return profile
 def demo_user_record(user_id: str) -> dict[str, Any] | None:
+ row=get_profile_by_demo_id(user_id)
+ if row:
+  profile=normalized_db_profile(row)
+  profile.setdefault("language",row.get("language") or "English")
+  documents=[]
+  try:documents=database.documents_for_user(str(row.get("user_id")))
+  except Exception as exc:logger.warning("Supabase document lookup failed (%s)",type(exc).__name__)
+  if not documents:
+   documents=[{"id":d["user_document_id"],"filename":d["document_name"],"type":d["document_name"],"status":d["status"].upper(),"demo":True,"note":"Sample document status only; not evidence of legal validity or verification."} for d in DEMO_USER_DOCUMENTS if str(d.get("user_id"))==user_id]
+  return {"user_id":user_id,"name":(row.get("attributes") or {}).get("name",user_id),"profile":profile,"documents":documents,"_supabase_user_id":str(row.get("user_id"))}
  row=next((u for u in DEMO_USERS if u["user_id"]==user_id),None)
  if not row:return None
  bool_fields={"disability","has_bank_account","is_farmer","is_student","is_pregnant"}
@@ -258,20 +337,22 @@ def demo_user_record(user_id: str) -> dict[str, Any] | None:
  return {"user_id":user_id,"name":row["name"],"profile":profile,"documents":documents}
 @app.get("/api/demo-users")
 def list_demo_users():
- return [{"user_id":u["user_id"],"name":u["name"],"occupation":u["occupation"],"district":u["district"],"state":u["state"]} for u in DEMO_USERS]
+ return [{"user_id":u["user_id"],"name":u.get("name",u["user_id"]),"occupation":u.get("occupation"),"district":u.get("district"),"state":u.get("state")} for u in DEMO_USERS]
 @app.get("/api/demo-users/{user_id}")
 def get_demo_user(user_id:str):
  record=demo_user_record(user_id)
  if not record: raise HTTPException(404,"Demo profile not found")
+ record.pop("_supabase_user_id",None)
  return record
 @app.post("/api/demo-users/{user_id}/load")
 def load_demo_user(user_id:str):
- global DOCUMENTS
+ global DOCUMENTS, ACTIVE_SUPABASE_USER_ID
  record=demo_user_record(user_id)
  if not record: raise HTTPException(404,"Demo profile not found")
  PROFILE.clear(); PROFILE.update(record["profile"])
  PROFILE["language"]="English"; PROFILE["existing_benefits"]=[]
  DOCUMENTS=record["documents"]
+ ACTIVE_SUPABASE_USER_ID=record.pop("_supabase_user_id",None)
  return record
 @app.put("/api/profile")
 def put_profile(body:ProfileBody):apply_profile(body.profile);return PROFILE
@@ -323,6 +404,7 @@ def run_agent_query(body:ChatRequest)->dict[str,Any]:
  selected=body.language if body.language in {"English","Hindi","Hinglish"} else detected
  fields,provider=extract_profile_fields(body.message)
  apply_profile(fields);PROFILE["language"]=selected
+ persist_current_profile()
  result=recommendations(PROFILE,body.message);recs=result["recommendations"]
  unknown=next((item for scheme in recs for item in scheme["unknown_criteria"]),None)
  labels={"age":"age","annual_family_income":"annual household income","annual_income":"annual household income","is_farmer":"whether you currently farm","farmer_status":"whether you currently farm","marital_status":"marital status","widow_status":"whether you are widowed","institution_type":"college or institution type","has_bank_account":"whether you have a bank account","is_student":"whether you are currently studying","student_status":"whether you are currently studying","education":"your current education level","education_level":"your current education level","is_pregnant":"whether you are currently pregnant","disability":"whether you have a disability","disability_status":"whether you have a disability","family_size":"family size","land_ownership":"whether you own or cultivate land"}
@@ -381,6 +463,11 @@ async def upload(file:UploadFile=File(...)):
  if "annual_income" in extracted and PROFILE.get("annual_income") is not None and int(extracted["annual_income"])!=int(PROFILE["annual_income"]):
   discrepancies.append({"field":"annual_income","user_reported":PROFILE["annual_income"],"document_extracted":extracted["annual_income"],"status":"NEEDS_USER_REVIEW"})
  doc={"id":f"doc-{len(DOCUMENTS)+1}","filename":name,"type":kind,"status":"EXTRACTED_NEEDS_REVIEW" if extracted else "NEEDS_REVIEW","size":len(content),"demo":True,"extracted_fields":extracted,"discrepancies":discrepancies,"note":extraction_note}
+ if ACTIVE_SUPABASE_USER_ID and DATABASE_SOURCE=="supabase":
+  try:
+   persisted=database.add_user_document(ACTIVE_SUPABASE_USER_ID,name,content_type,doc["status"])
+   if persisted and persisted.get("id"):doc["id"]=str(persisted["id"])
+  except Exception as exc:logger.warning("Supabase document metadata save failed; keeping upload in memory (%s)",type(exc).__name__)
  DOCUMENTS.append(doc);return doc
 @app.post("/api/documents/{document_id}/confirm")
 def confirm_document(document_id:str,body:DocumentReviewBody):
@@ -388,13 +475,22 @@ def confirm_document(document_id:str,body:DocumentReviewBody):
  if not doc:raise HTTPException(404,"Document not found")
  if body.field!="annual_income" or body.field not in doc.get("extracted_fields",{}):raise HTTPException(400,"That extracted field is not available for review.")
  if not body.confirm:
-  doc["status"]="REVIEW_REQUIRED";return {"document":doc,"profile":PROFILE}
+  doc["status"]="REVIEW_REQUIRED"
+  persist_document_status(doc)
+  return {"document":doc,"profile":PROFILE}
  PROFILE["verified_annual_income"]=doc["extracted_fields"]["annual_income"]
  PROFILE.setdefault("_statuses",{})["verified_annual_income"]="DOCUMENT_VERIFIED"
  PROFILE.setdefault("_statuses",{})["annual_income"]=PROFILE.get("_statuses",{}).get("annual_income","USER_REPORTED" if PROFILE.get("annual_income") is not None else "UNKNOWN")
  doc["status"]="USER_CONFIRMED_CONTENT"
  doc["note"]="The user confirmed the extracted value for eligibility review. Document authenticity is not independently verified."
+ persist_document_status(doc)
+ persist_current_profile()
  return {"document":doc,"profile":PROFILE,"reported_annual_income":PROFILE.get("annual_income"),"document_income":PROFILE["verified_annual_income"],"discrepancy":PROFILE.get("annual_income") is not None and PROFILE.get("annual_income")!=PROFILE["verified_annual_income"]}
+
+def persist_document_status(doc: dict[str,Any]):
+ if ACTIVE_SUPABASE_USER_ID and DATABASE_SOURCE=="supabase" and not str(doc.get("id","")).startswith("doc-"):
+  try:database.update_user_document(str(doc["id"]),{"status":doc.get("status")})
+  except Exception as exc:logger.warning("Supabase document status save failed (%s)",type(exc).__name__)
 @app.post("/api/documents/analyze")
 def analyze():return {"documents":DOCUMENTS,"message":"Selectable PDF/text extraction is available. Image/scanned PDF OCR and document authenticity checks are not configured."}
 @app.get("/api/documents")

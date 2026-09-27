@@ -454,11 +454,16 @@ pip install -r requirements.txt
 
 ## 4. Environment Variables
 
+<<<<<<< HEAD
 Create `.env.local` / `.env` as required by the project.
+=======
+For local development, configure these in the backend process environment (or pass a local env file explicitly to your process manager). Supabase credentials are server-side only.
+>>>>>>> cd3f600 (Connect Welfare Navigator to Supabase)
 
 Example:
 
 ```env
+<<<<<<< HEAD
 OPENAI_API_KEY=your_api_key
 
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -476,6 +481,20 @@ Never commit API keys.
 Configure PostgreSQL/Supabase and enable `pgvector` if RAG vector search is being used.
 
 Load the scheme dataset and eligibility rules into the database.
+=======
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SECRET_KEY=your_server_side_supabase_secret
+FRONTEND_ORIGIN=https://your-frontend.example
+OPENAI_API_KEY=your_api_key
+OPENAI_MODEL=gpt-4o-mini
+```
+
+`SUPABASE_URL` and `SUPABASE_SECRET_KEY` enable the backend's primary PostgreSQL catalog/profile/document data source. If Supabase is not configured or cannot be reached at startup, the backend loads its CSV seed data. `FRONTEND_ORIGIN`, `OPENAI_API_KEY`, and `OPENAI_MODEL` are optional. Do not use `NEXT_PUBLIC_` for Supabase or OpenAI credentials, and never commit `.env` files or secrets.
+
+## 5. Database
+
+The backend reads `schemes`, `eligibility_rules`, `scheme_documents`, and `scheme_categories` from Supabase at startup and caches them for recommendation requests. Demo profile lookups resolve `U001`-style IDs through `profiles.attributes.user_id`. Profile and user-document metadata writes are persisted when a demo profile is loaded. Uploaded bytes continue through the existing local extraction flow; no Supabase Storage bucket or pgvector embedding job is required. CSV files under `database/seed` remain the fallback.
+>>>>>>> cd3f600 (Connect Welfare Navigator to Supabase)
 
 ## 6. Run Frontend
 
@@ -490,6 +509,12 @@ uvicorn app.main:app --reload
 ```
 
 The exact backend entry point may vary depending on the repository structure.
+
+From `outputs/backend`, with `SUPABASE_URL` and `SUPABASE_SECRET_KEY` set, the API uses Supabase; otherwise it starts in CSV fallback/demo mode. `/api/health` preserves `status` and `demo_mode` and reports the active database source.
+
+### Render deployment
+
+Keep the existing Render service and frontend unchanged. Set the backend root directory to `outputs/backend` if the repository root is used, keep the existing build/start commands, and add `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, and the deployed frontend's exact origin as `FRONTEND_ORIGIN` in the Render service's environment settings. Add `OPENAI_API_KEY` and `OPENAI_MODEL` only if using the optional extraction provider. Redeploy, then check `/api/health`, `/api/schemes`, `/api/scheme-categories`, `/api/demo-users`, `/api/demo-users/U001`, `/api/demo-users/U001/load`, and `/api/schemes/recommend`. Never put the Supabase secret in frontend environment variables.
 
 ---
 
