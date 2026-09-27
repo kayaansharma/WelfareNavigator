@@ -1,5 +1,5 @@
 import unittest
-from app.main import check, evaluate, DEMO_USERS, SCHEMES, DEMO_USER_DOCUMENTS, demo_user_record
+from app.main import check, evaluate, DEMO_USERS, SCHEMES, DEMO_USER_DOCUMENTS, demo_user_record, load_catalog
 class RulesTests(unittest.TestCase):
     def rule(self, field="age", operator="<=", value=30): return {"field":field,"operator":operator,"value":value,"description":"test"}
     def test_age_match_and_fail(self):
@@ -31,6 +31,14 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(evaluate(rule,{"age":60}),"FAILED")
         income=self.rule("annual_family_income","<=",450000)
         self.assertEqual(evaluate(income,{"annual_income":180000}),"MATCHED")
+    def test_csv_rule_loader_keeps_existing_boolean_and_categorical_types(self):
+        schemes, _, _, _ = load_catalog()
+        scheme = next(item for item in schemes if item["id"] == "S036")
+        student_rule = next(rule for rule in scheme["rules"] if rule["field"] == "is_student")
+        self.assertIs(student_rule["value"], True)
+        category_scheme = next(item for item in schemes if item["id"] == "S033")
+        category_rule = next(rule for rule in category_scheme["rules"] if rule["operator"] == "IN")
+        self.assertEqual(category_rule["value"], ["OBC", "EBC", "DNT"])
     def test_demo_profile_includes_sample_documents(self):
         user=demo_user_record("U001")
         self.assertEqual(user["profile"]["annual_income"],180000)

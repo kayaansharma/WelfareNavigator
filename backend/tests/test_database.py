@@ -44,7 +44,7 @@ def demo_tables():
     profiles = [{"user_id": f"uuid-{i:03}", "attributes": {"user_id": f"U{i:03}", "name": f"Demo {i}", "age": 22 if i == 1 else 30, "annual_family_income": 180000 if i == 1 else 300000, "is_student": i == 1}, "field_status": {}, "language": "English"} for i in range(1, 41)]
     return {
         "schemes": [{"id": f"S{i:02}", "name": f"Scheme {i}", "description": "Support", "government": "Central", "state": "All India", "category": "Education", "benefits": "Support", "eligibility_summary": "Demo", "application_process": "Apply", "application_url": "https://example.org", "source_url": "https://example.org", "source_name": "Example", "last_verified": "2026-01-01", "active": True, "synthetic": False} for i in range(40)],
-        "eligibility_rules": [{"scheme_id": f"S{i%40:02}", "field": "age", "operator": "less_than_or_equal", "value": 60, "description": "Age 60 or lower", "required": True, "group_operator": None} for i in range(128)],
+        "eligibility_rules": [{"scheme_id": f"S{i%40:02}", "field": "age", "operator": "less_than_or_equal", "value": 60+i, "description": "Age limit", "required": True, "group_operator": None} for i in range(128)],
         "scheme_documents": [{"id": i, "scheme_id": f"S{i%40:02}", "document_type": f"Document {i}", "required": i%2 == 0} for i in range(92)],
         "scheme_categories": [{"category_id": f"C{i:02}", "category_name": f"Category {i}", "description": "Demo category"} for i in range(15)],
         "profiles": profiles,
@@ -74,6 +74,34 @@ class DatabaseIntegrationTests(unittest.TestCase):
         self.assertEqual(schemes[0]["rules"][0]["operator"], "<=")
         self.assertEqual(len(users), 40)
         self.assertEqual(len(user_docs), 110)
+
+    def test_supabase_rules_normalize_values_and_dedupe_only_exact_semantic_duplicates(self):
+        tables = demo_tables()
+        tables["schemes"][36]["id"] = "S036"
+        duplicate_yes = {"scheme_id": "S036", "field": "is_student", "operator": "equals", "value": "Yes", "required": True, "group_operator": "AND", "description": "Student"}
+        tables["eligibility_rules"] = [
+            duplicate_yes,
+            {**duplicate_yes, "operator": "==", "value": True, "description": "Duplicate wording"},
+            {**duplicate_yes, "required": False},
+            {**duplicate_yes, "group_operator": "OR"},
+            {"scheme_id": "S036", "field": "age", "operator": ">=", "value": "60", "required": True, "group_operator": None},
+            {"scheme_id": "S036", "field": "age", "operator": "BETWEEN", "value": ["18", "60"], "required": True, "group_operator": None},
+            {"scheme_id": "S036", "field": "social_category", "operator": "IN", "value": ["OBC", "SC"], "required": True, "group_operator": None},
+            {"scheme_id": "S036", "field": "state", "operator": "equals", "value": "true", "required": True, "group_operator": None},
+        ]
+        client = FakeSupabase(tables)
+        schemes, _, _, _ = database.load_catalog(client)
+        rules = next(scheme["rules"] for scheme in schemes if scheme["id"] == "S036")
+
+        student_rules = [rule for rule in rules if rule["field"] == "is_student"]
+        self.assertEqual(len(student_rules), 3)
+        self.assertEqual(student_rules[0]["operator"], "==")
+        self.assertIs(student_rules[0]["value"], True)
+        self.assertEqual(main.evaluate(student_rules[0], {"is_student": True}), "MATCHED")
+        self.assertEqual(next(rule["value"] for rule in rules if rule["field"] == "age" and rule["operator"] == ">="), 60)
+        self.assertEqual(next(rule["value"] for rule in rules if rule["operator"] == "BETWEEN"), [18, 60])
+        self.assertEqual(next(rule["value"] for rule in rules if rule["field"] == "social_category"), ["OBC", "SC"])
+        self.assertEqual(next(rule["value"] for rule in rules if rule["field"] == "state"), "true")
 
     def test_demo_u001_profile_and_documents_resolve_through_profile_attributes(self):
         main.DATABASE_SOURCE = "supabase"

@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 _client: Any | None = None
 _client_initialized = False
 
+_BOOLEAN_RULE_FIELDS = {
+    "is_farmer", "is_student", "is_pregnant", "has_bank_account",
+    "has_lpg_connection", "disability", "farmer_status", "student_status",
+    "disability_status", "widow_status", "senior_citizen_status",
+    "entrepreneur_status",
+}
+_NUMERIC_RULE_FIELDS = {"age", "annual_family_income", "annual_income", "family_size"}
+
 
 def get_client() -> Any | None:
     """Return the process-wide Supabase client, or None when it is not configured."""
@@ -47,6 +55,62 @@ def _select_all(client: Any, table: str) -> list[dict[str, Any]]:
         offset += page_size
 
 
+def _normalize_numeric_string(value: str) -> Any:
+    candidate = value.strip()
+    try:
+        return int(candidate)
+    except ValueError:
+        try:
+            return float(candidate)
+        except ValueError:
+            return value
+
+
+def _normalize_rule_value(field: str, operator: str, value: Any) -> Any:
+    """Mirror the CSV loader's field-aware typing for values returned by Supabase."""
+    if operator == "BETWEEN" and isinstance(value, str) and "-" in value:
+        value = [part.strip() for part in value.split("-", 1)]
+
+    if isinstance(value, list):
+        # BETWEEN is numeric by definition. IN lists keep category labels as text,
+        # while fields with known scalar types retain their CSV-style value types.
+        normalize_items = operator == "BETWEEN" or field in _NUMERIC_RULE_FIELDS or field in _BOOLEAN_RULE_FIELDS
+        if not normalize_items:
+            return value
+        return [_normalize_rule_scalar(field, item, numeric=operator == "BETWEEN" or field in _NUMERIC_RULE_FIELDS) for item in value]
+    return _normalize_rule_scalar(
+        field, value,
+        numeric=operator == "BETWEEN" or field in _NUMERIC_RULE_FIELDS,
+    )
+
+
+def _normalize_rule_scalar(field: str, value: Any, *, numeric: bool) -> Any:
+    if isinstance(value, str):
+        token = value.strip()
+        if field in _BOOLEAN_RULE_FIELDS:
+            lowered = token.casefold()
+            if lowered in {"yes", "true"}:
+                return True
+            if lowered in {"no", "false"}:
+                return False
+        if numeric:
+            return _normalize_numeric_string(token)
+    return value
+
+
+def _dedupe_value_key(value: Any) -> Any:
+    """Create a hashable key that distinguishes booleans from numbers."""
+    if isinstance(value, bool):
+        return ("bool", value)
+    if isinstance(value, (int, float)):
+        return ("number", value)
+    if isinstance(value, list):
+        return ("list", tuple(_dedupe_value_key(item) for item in value))
+    if isinstance(value, dict):
+        return ("dict", tuple(sorted((key, _dedupe_value_key(item)) for key, item in value.items())))
+    return (type(value).__name__, value)
+
+
 def check_connection() -> bool:
     client = get_client()
     if client is None:
@@ -76,24 +140,40 @@ def load_catalog(client: Any | None = None) -> tuple[list[dict[str, Any]], list[
 
     rules_by_scheme: dict[str, list[dict[str, Any]]] = {}
     operator_map = {"equals": "==", "greater_than_or_equal": ">=", "less_than_or_equal": "<=", "between": "BETWEEN", "in": "IN"}
+    seen_rules: dict[str, set[tuple[Any, ...]]] = {}
     for row in rule_rows:
         scheme_id = str(row["scheme_id"])
         value = row.get("value")
         if isinstance(value, str):
-            # Some older imports stored JSONB scalar values as text.
+            # Parse serialized containers, but leave scalar strings for the
+            # field-aware normalizer (e.g. categorical text "true" stays text).
             import json
-            try:
-                value = json.loads(value)
-            except (ValueError, TypeError):
-                pass
-        rules_by_scheme.setdefault(scheme_id, []).append({
+            serialized = value.strip()
+            if (serialized.startswith(("[", "{")) or
+                    (serialized.startswith('"') and serialized.endswith('"'))):
+                try:
+                    value = json.loads(serialized)
+                except (ValueError, TypeError):
+                    pass
+        operator = operator_map.get(str(row.get("operator") or "==").strip().lower(), str(row.get("operator") or "==").strip().upper())
+        value = _normalize_rule_value(str(row.get("field") or ""), operator, value)
+        required_value = row.get("required", True)
+        required = required_value.strip().casefold() in {"true", "yes", "1"} if isinstance(required_value, str) else bool(required_value)
+        group_operator = row.get("group_operator")
+        rule = {
             "field": row.get("field"),
-            "operator": operator_map.get(str(row.get("operator") or "==").lower(), str(row.get("operator") or "==").upper()),
+            "operator": operator,
             "value": value,
             "description": row.get("description") or f'{row.get("field")} {row.get("operator")} {value}',
-            "required": row.get("required", True) not in (False, 0, "false", "False", "0"),
-            "group_operator": row.get("group_operator"),
-        })
+            "required": required,
+            "group_operator": group_operator,
+        }
+        duplicate_key = (rule["field"], rule["operator"], _dedupe_value_key(value), required, group_operator)
+        seen = seen_rules.setdefault(scheme_id, set())
+        if duplicate_key in seen:
+            continue
+        seen.add(duplicate_key)
+        rules_by_scheme.setdefault(scheme_id, []).append(rule)
 
     documents_by_scheme: dict[str, list[dict[str, Any]]] = {}
     for row in document_rows:
